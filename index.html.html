@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Christian's Jigsaw Puzzle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f7d9da;
+      font-family: 'Patrick Hand', cursive;
+      text-align: center;
+      padding: 20px;
+    }
+
+    canvas {
+      border: 4px solid #d94f70;
+      border-radius: 12px;
+      cursor: grab;
+    }
+
+    h1 {
+      color: #d94f70;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Oh no, we got scrambled! Help put us back together ❤️</h1>
+  <canvas id="puzzle" width="600" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById('puzzle');
+    const ctx = canvas.getContext('2d');
+
+    const rows = 3;
+    const cols = 3;
+    const image = new Image();
+    image.src = 'DoNotOpen/c_g_1.jpg'; // Put your image in an 'images' folder
+
+    let pieces = [];
+    let pieceWidth, pieceHeight;
+    let draggingPiece = null;
+    let offsetX, offsetY;
+
+    image.onload = () => {
+      pieceWidth = canvas.width / cols;
+      pieceHeight = canvas.height / rows;
+
+      // Slice image into pieces
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const piece = {
+            sx: x * (image.width / cols),
+            sy: y * (image.height / rows),
+            dx: Math.random() * (canvas.width - pieceWidth),
+            dy: Math.random() * (canvas.height - pieceHeight),
+            correctX: x * pieceWidth,
+            correctY: y * pieceHeight,
+            placed: false
+          };
+          pieces.push(piece);
+        }
+      }
+
+      draw();
+    };
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let piece of pieces) {
+        ctx.drawImage(
+          image,
+          piece.sx, piece.sy, image.width / cols, image.height / rows,
+          piece.dx, piece.dy, pieceWidth, pieceHeight
+        );
+      }
+    }
+
+    canvas.onmousedown = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+
+      for (let i = pieces.length - 1; i >= 0; i--) {
+        const p = pieces[i];
+        if (
+          mx >= p.dx && mx <= p.dx + pieceWidth &&
+          my >= p.dy && my <= p.dy + pieceHeight &&
+          !p.placed
+        ) {
+          draggingPiece = p;
+          offsetX = mx - p.dx;
+          offsetY = my - p.dy;
+          pieces.push(pieces.splice(i, 1)[0]); // Bring to front
+          break;
+        }
+      }
+    };
+
+    canvas.onmousemove = (e) => {
+      if (draggingPiece) {
+        const rect = canvas.getBoundingClientRect();
+        draggingPiece.dx = e.clientX - rect.left - offsetX;
+        draggingPiece.dy = e.clientY - rect.top - offsetY;
+        draw();
+      }
+    };
+
+    canvas.onmouseup = () => {
+      if (draggingPiece) {
+        if (
+          Math.abs(draggingPiece.dx - draggingPiece.correctX) < 15 &&
+          Math.abs(draggingPiece.dy - draggingPiece.correctY) < 15
+        ) {
+          draggingPiece.dx = draggingPiece.correctX;
+          draggingPiece.dy = draggingPiece.correctY;
+          draggingPiece.placed = true;
+        }
+        draggingPiece = null;
+        draw();
+        checkComplete();
+      }
+    };
+
+    function checkComplete() {
+      if (pieces.every(p => p.placed)) {
+        setTimeout(() => {
+          alert("Nicely done! 💘");
+          window.location.href = 'DoNotOpen/do_not_open_me.html';
+        }, 500);
+      }
+    }
+  </script>
+</body>
+</html>
